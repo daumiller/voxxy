@@ -1,0 +1,4 @@
+.vscode/settings.json
+**/*.o
+**/.DS_Store
+**/*.app

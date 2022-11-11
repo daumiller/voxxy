@@ -17,30 +17,30 @@ void Toolbar::appendItems(ToolbarItem* items, int32_t item_count) {
   }
 }
 
-bool Toolbar::insertItem(ToolbarItem item, const char* before_item_id) {
+bool Toolbar::insertItem(ToolbarItem item, uint32_t before_item_id) {
   int32_t before_index = getItemIndex(before_item_id);
   if(before_index < 0) { return false; }
   items.insert(items.begin() + before_index, item);
   return true;
 }
 
-bool Toolbar::removeItem(const char* id) {
-  int32_t index = getItemIndex(id);
+bool Toolbar::removeItem(uint32_t item_id) {
+  int32_t index = getItemIndex(item_id);
   if(index < 0) { return false; }
   items.erase(items.begin() + index);
   return true;
 }
 
-int32_t Toolbar::getItemIndex(const char* id) {
+int32_t Toolbar::getItemIndex(uint32_t item_id) {
   size_t count = items.size();
   for(size_t idx=0; idx<count; ++idx) {
-    if(strcmp(items[idx].id, id) == 0) { return (int32_t)idx; }
+    if(items[idx].id == item_id) { return (int32_t)idx; }
   }
   return -1;
 }
 
-ToolbarItem* Toolbar::getItem(const char* id) {
-  int32_t index = getItemIndex(id);
+ToolbarItem* Toolbar::getItem(uint32_t item_id) {
+  int32_t index = getItemIndex(item_id);
   if(index < 0) { return NULL; }
   return &(items[index]);
 }
@@ -107,7 +107,7 @@ void Toolbar::render(Rectangle rectangle) {
     if(item->is_active) { GuiSetState(GUI_STATE_PRESSED); }
     if(item->is_enabled == false) { GuiSetState(GUI_STATE_DISABLED); }
 
-    if((item->id[0] != '-') || (item->icon[0] != '-')) { // skip separators
+    if(item->icon) {
       if(GuiButton({ current_x, current_y, TOOLBAR_ITEM_SIZE, TOOLBAR_ITEM_SIZE}, item->icon)) {
         onClick(item);
       }

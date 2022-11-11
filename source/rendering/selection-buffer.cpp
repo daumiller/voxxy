@@ -2,12 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-SelectionBuffer::SelectionBuffer(const char* vertex_shader_path, const char* fragment_shader_path) {
-  shader = LoadShader(vertex_shader_path, fragment_shader_path);
-  shader_location_voxel_x    = GetShaderLocation(shader, "voxel_x");
-  shader_location_voxel_y    = GetShaderLocation(shader, "voxel_y");
-  shader_location_voxel_z    = GetShaderLocation(shader, "voxel_z");
-  shader_location_voxel_face = GetShaderLocation(shader, "voxel_face");
+SelectionBuffer::SelectionBuffer() {
   gl_fbo = 0;
   gl_texture_color = 0;
   gl_texture_depth = 0;
@@ -19,7 +14,15 @@ SelectionBuffer::~SelectionBuffer() {
   if(gl_texture_depth) { glDeleteTextures(1, &gl_texture_depth); }
 }
 
-void SelectionBuffer::reset(uint32_t width, uint32_t height) {
+void SelectionBuffer::initialize(const char* vertex_shader_path, const char* fragment_shader_path) {
+  shader = LoadShader(vertex_shader_path, fragment_shader_path);
+  shader_location_voxel_x    = GetShaderLocation(shader, "voxel_x");
+  shader_location_voxel_y    = GetShaderLocation(shader, "voxel_y");
+  shader_location_voxel_z    = GetShaderLocation(shader, "voxel_z");
+  shader_location_voxel_face = GetShaderLocation(shader, "voxel_face");
+}
+
+void SelectionBuffer::resize(uint32_t width, uint32_t height) {
   if(gl_fbo) { glDeleteFramebuffers(1, &gl_fbo); }
   if(gl_texture_color) { glDeleteTextures(1, &gl_texture_color); }
   if(gl_texture_depth) { glDeleteTextures(1, &gl_texture_depth); }

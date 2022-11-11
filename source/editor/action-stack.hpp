@@ -5,10 +5,10 @@
 #include "../data/vxx-model.hpp"
 
 typedef enum {
+  ActionType_Invalid,
   ActionType_VoxelsAdd,
   ActionType_VoxelsRemove,
   ActionType_VoxelsModify,
-  ActionType_VoxelsSelect,
 } ActionType;
 
 typedef struct {
@@ -23,6 +23,7 @@ typedef struct {
 
 class ActionStack {
 public:
+  ActionStack();
   ActionStack(int32_t depth_maximum);
 
   bool canUndo();

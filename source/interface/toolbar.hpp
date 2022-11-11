@@ -16,7 +16,7 @@ typedef enum {
 } ToolbarStyle;
 
 typedef struct {
-  const char* id;
+  uint32_t    id;
   const char* icon;
   bool  is_visible;
   bool  is_enabled;
@@ -29,14 +29,14 @@ public:
   Toolbar(ToolbarStyle style);
   void appendItem(ToolbarItem item);
   void appendItems(ToolbarItem* items, int32_t item_count);
-  bool insertItem(ToolbarItem item, const char* before_item_id);
-  bool removeItem(const char* id);
-  ToolbarItem* getItem(const char* id);
+  bool insertItem(ToolbarItem item, uint32_t before_item_id);
+  bool removeItem(uint32_t item_id);
+  ToolbarItem* getItem(uint32_t item_id);
   void render(Rectangle rectangle);
   virtual void onClick(ToolbarItem* item);
 
 protected:
-  int32_t getItemIndex(const char* id);
+  int32_t getItemIndex(uint32_t item_id);
   ToolbarStyle style;
   std::vector<ToolbarItem> items;
 };

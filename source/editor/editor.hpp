@@ -44,6 +44,8 @@ typedef enum {
 //   - currently active modal
 //   - selection_buffer
 //   - per-frame action stack
+//   - previous screen size (to detect resizes)
+//   - whether frames/colors expanded
 
 // handle:
 //   - toolbar press events
@@ -60,32 +62,39 @@ typedef enum {
 class Editor {
 public:
   Editor();
+  ~Editor();
   void mainLoop();
+
+  void handleUiAction(uint32_t ui_action);
+  void handleFrameSelected(const char* frame_name);
+  void handleColorSelected(uint32_t color);
+  void handleModalModelOpen(const char* path);
+  void handleModalPaletteOpen(const char* path);
+
+  void performAction(Action action);
 
 protected:
   EditorTool               selected_tool;
   uint32_t                 selected_color;
   std::vector<VxxVoxel>    selected_voxels;
   EditorSelectionRectangle selected_rectangle;
-  VxxModel                 current_model;
+  VxxModelEditor           current_model;
   const char*              current_model_path;
-  VxxModelFrame*           current_model_frame;
+  VxxModelFrameEditor*     current_model_frame;
   const char*              current_model_frame_name;
   EditorModalType          active_modal;
   SelectionBuffer          selection_buffer;
+  int32_t                  screen_width_previous;
+  int32_t                  screen_height_previous;
+  bool                     ui_frames_expanded;
+  bool                     ui_colors_expanded;
+  Toolbar*                 ui_main_toolbar;
+  bool                     running;
+  std::vector<VxxVisibleVoxel>* visible_voxels;
   std::unordered_map<std::string, ActionStack> frame_action_stacks;
 
-  void handleToolbarClick(ToolbarItem* item); // handles main toolbar, animations toolbar, and colors toolbar
-  void handleFrameSelected(const char* frame_name);
-  void handleColorSelected(uint32_t color);
-  void handleModalModelOpen(const char* path);
-  void handleModalModelNew();
-  void handleModalPaletteOpen(const char* path);
-  void handleModalPaletteNew();
-  void handleQuitRequested();
-
-  void renderModel(bool for_selection_buffer);
-  void renderUI();
+  const char* pathForResource(const char* filename);
+  void renderModel(bool for_selection_buffer, Shader* shader_default, SelectionBufferId* selection_id);
 };
 
 #endif // ifndef EDITOR_HEADER

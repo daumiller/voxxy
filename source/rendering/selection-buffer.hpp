@@ -16,10 +16,11 @@ typedef struct {
 
 class SelectionBuffer {
 public:
-  SelectionBuffer(const char* vertex_shader_path, const char* fragment_shader_path);
+  SelectionBuffer();
   ~SelectionBuffer();
 
-  void reset(uint32_t width, uint32_t height);
+  void initialize(const char* vertex_shader_path, const char* fragment_shader_path);
+  void resize(uint32_t width, uint32_t height);
   void bind();
   void unbind();
   SelectionBufferId readIdFromPixel(uint32_t x, uint32_t y);

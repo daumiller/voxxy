@@ -7,8 +7,15 @@
 //    (index_saved == -1) => never been saved (or saved in some pushed-out-by-overflow action)
 //    (index_saved == 0) => state was saved immediately after performing the first action
 
+// don't use this... need a default ctor because c++ is fucking annoying
+ActionStack::ActionStack() {
+  depth_maximum = 1;
+  this->reset();
+}
+
 ActionStack::ActionStack(int32_t depth_maximum) {
   this->depth_maximum = depth_maximum;
+  this->reset();
 }
 
 bool ActionStack::canUndo()      { return (index_current > -1);                 }
@@ -29,7 +36,7 @@ void ActionStack::markStateSaved() {
 Action ActionStack::undo() {
   if(index_current < 0) {
     Action blank_action;
-    blank_action.type == ActionType_VoxelsSelect;
+    blank_action.type = ActionType_Invalid;
     return blank_action;
   }
 
@@ -41,7 +48,7 @@ Action ActionStack::undo() {
 Action ActionStack::redo() {
   if(index_current >= (signedSize() - 1)) {
     Action blank_action;
-    blank_action.type == ActionType_VoxelsSelect;
+    blank_action.type = ActionType_Invalid;
     return blank_action;
   }
 

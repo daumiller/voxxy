@@ -1,3 +1,3 @@
 voxxy - a voxel editor
 
-[!screenshot](screenshot.png)
+![screenshot](screenshot.png)

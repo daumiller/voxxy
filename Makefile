@@ -11,6 +11,7 @@ RELEASE_OBJECTS = source/data/vxx-model.o             \
                   source/data/vxx-model-editor.o      \
                   source/rendering/selection-buffer.o \
                   source/interface/toolbar.o          \
+                  source/interface/color-picker.o     \
                   source/editor/action-stack.o        \
                   source/editor/editor-face-models.o  \
                   source/editor/editor.o              \

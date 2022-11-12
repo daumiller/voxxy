@@ -4,6 +4,7 @@
 #include "../data/vxx-model-editor.hpp"
 #include "../editor/action-stack.hpp"
 #include "../interface/toolbar.hpp"
+#include "../interface/color-picker.hpp"
 #include "../rendering/selection-buffer.hpp"
 #include <stdbool.h>
 
@@ -34,31 +35,6 @@ typedef enum {
   EditorModalType_Settings,
 } EditorModalType;
 
-// keep track of:
-//   - currently selected tool
-//   - currently selected color
-//   - currently selected voxels
-//   - current selection rectangle
-//   - current model file, including file path
-//   - currently active frame
-//   - currently active modal
-//   - selection_buffer
-//   - per-frame action stack
-//   - previous screen size (to detect resizes)
-//   - whether frames/colors expanded
-
-// handle:
-//   - toolbar press events
-//   - frame selection events
-//   - color selection events
-//   - file & palette load events
-//   - file & palette new events
-//   - main loop, w/:
-//     - rendering selection buffer
-//     - rendering visible buffer
-//     - non-ui click & drag events
-//     - non-ui keypress events
-
 class Editor {
 public:
   Editor();
@@ -73,9 +49,9 @@ public:
 
   void performAction(Action action);
 
+  uint32_t                 selected_color;
 protected:
   EditorTool               selected_tool;
-  uint32_t                 selected_color;
   std::vector<VxxVoxel>    selected_voxels;
   EditorSelectionRectangle selected_rectangle;
   VxxModelEditor           current_model;
@@ -89,6 +65,7 @@ protected:
   bool                     ui_frames_expanded;
   bool                     ui_colors_expanded;
   Toolbar*                 ui_main_toolbar;
+  ColorPicker*             ui_color_picker;
   bool                     running;
   std::vector<VxxVisibleVoxel>* visible_voxels;
   std::unordered_map<std::string, ActionStack> frame_action_stacks;

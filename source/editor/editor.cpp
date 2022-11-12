@@ -7,10 +7,8 @@
 #include <raygui.h>
 #include "editor-face-models.hpp"
 
+// DEFINITIONS ====================================================================================================================
 #define MAX_ACTION_STACK_DEPTH 1024
-
-static VoxelFaceModels voxel_face_models;
-static bool voxel_face_models_generated = false;
 
 #define UI_ACTION_NONE             0
 #define UI_ACTION_MODEL_NEW        1
@@ -27,6 +25,11 @@ static bool voxel_face_models_generated = false;
 #define UI_ACTION_COLORS_EXPAND   12
 #define UI_ACTION_QUIT_REQUESTED 255
 
+// GLOBALS ========================================================================================================================
+static VoxelFaceModels voxel_face_models;
+static bool voxel_face_models_generated = false;
+
+// SUBCLASSES =====================================================================================================================
 class ToolbarMain : public Toolbar {
 public:
   ToolbarMain(ToolbarStyle style, Editor* editor);
@@ -49,6 +52,17 @@ void ToolbarMain::setActiveId(uint32_t active_id) {
   }
 }
 
+class ColorPickerMain : public ColorPicker {
+public:
+  ColorPickerMain(Editor* editor);
+  void onColorChanged(uint32_t color);
+protected:
+  Editor* editor;
+};
+ColorPickerMain::ColorPickerMain(Editor* editor) { this->editor = editor; }
+void ColorPickerMain::onColorChanged(uint32_t color) { if(editor) { editor->selected_color = color; } }
+
+// HELPERS ========================================================================================================================
 static bool selectionIdsSameVoxel(SelectionBufferId a, SelectionBufferId b) {
   if(a.voxel_x != b.voxel_x) { return false; }
   if(a.voxel_y != b.voxel_y) { return false; }
@@ -65,6 +79,24 @@ static inline Color raylibColorFromUint32(uint32_t uint32_color) {
     };
 }
 
+static inline uint32_t uint32ColorFromRaylib(Color color) {
+  uint32_t output_color = 0;
+  output_color |= ((uint32_t)color.r) << 24;
+  output_color |= ((uint32_t)color.g) << 16;
+  output_color |= ((uint32_t)color.b) <<  8;
+  output_color |= ((uint32_t)color.a) <<  0;
+  return output_color;
+};
+
+static bool pointWithinRectangle(float x, float y, Rectangle* rect) {
+  if(x < rect->x) { return false; }
+  if(y < rect->y) { return false; }
+  if(x >= (rect->x + rect->width )) { return false; }
+  if(y >= (rect->y + rect->height)) { return false; }
+  return true;
+}
+
+// CTOR/DTOR =====================================================================================================================2
 Editor::Editor() {
   visible_voxels = NULL;
 
@@ -97,6 +129,10 @@ Editor::Editor() {
   toolbar_main->appendItems(main_toolbar_items, 12);
   ui_main_toolbar = toolbar_main;
 
+  ColorPickerMain* color_picker = new ColorPickerMain(this);
+  ui_color_picker = color_picker;
+  color_picker->setCurrentColor(selected_color);
+
   current_model_frame_name = "untitled";
   VxxModelFrameEditor frame;
   frame.addVoxel({ .x=0, .y=0, .z=0, .color=0xFF00FFFF });
@@ -112,6 +148,7 @@ Editor::~Editor() {
   if(ui_main_toolbar) { delete ui_main_toolbar; }
 }
 
+// RESOURCES ======================================================================================================================
 const char* Editor::pathForResource(const char* filename) {
   // first, get path to current process's executable
   pid_t process_pid = getpid();
@@ -134,6 +171,7 @@ const char* Editor::pathForResource(const char* filename) {
   return resource_path;
 }
 
+// UI EVENTS ======================================================================================================================
 void Editor::handleUiAction(uint32_t ui_action) {
   switch(ui_action) {
     case UI_ACTION_NONE: return;
@@ -168,6 +206,7 @@ void Editor::handleModalModelOpen(const char* path) {
 void Editor::handleModalPaletteOpen(const char* path) {
 }
 
+// RENDERING ======================================================================================================================
 void Editor::renderModel(bool for_selection_buffer, Shader* shader_default, SelectionBufferId* hovered_id) {
   if(!visible_voxels) { return; }
 
@@ -250,14 +289,7 @@ void Editor::renderModel(bool for_selection_buffer, Shader* shader_default, Sele
   }
 }
 
-static bool pointWithinRectangle(float x, float y, Rectangle* rect) {
-  if(x < rect->x) { return false; }
-  if(y < rect->y) { return false; }
-  if(x >= (rect->x + rect->width )) { return false; }
-  if(y >= (rect->y + rect->height)) { return false; }
-  return true;
-}
-
+// ACTIONS ========================================================================================================================
 void Editor::performAction(Action action) {
   std::unordered_map<std::string, ActionStack>::iterator position = frame_action_stacks.find(current_model_frame_name);
   if(position == frame_action_stacks.end()) { return; }
@@ -303,8 +335,9 @@ void Editor::performAction(Action action) {
   }
 }
 
+// MAIN LOOP ======================================================================================================================
 void Editor::mainLoop() {
-  SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+  SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_MSAA_4X_HINT);
   InitWindow(800, 480, "voxxy");
   SetExitKey(0);
 
@@ -335,8 +368,9 @@ void Editor::mainLoop() {
 
   Rectangle rect_screen;
   Rectangle rect_main_toolbar;
-  Rectangle rect_frame_window;
-  Rectangle rect_color_window;
+  Rectangle rect_frame_picker;
+  Rectangle rect_color_picker_toggle;
+  Rectangle rect_color_picker;
   Rectangle rect_modal;
   int32_t screen_width_current;
   int32_t screen_height_current;
@@ -368,8 +402,10 @@ void Editor::mainLoop() {
     if((screen_width_current != screen_width_previous) || (screen_height_current != screen_height_previous)) {
       rect_screen = { 0.0f, 0.0f, ((float)screen_width_current), ((float)screen_height_current) };
       rect_main_toolbar = { 0.0f, 0.0f, ((float)screen_width_current), (TOOLBAR_ITEM_SIZE + 2.0f) };
-      selection_buffer.resize(screen_width_current, screen_height_current);
+      rect_color_picker_toggle = { ((float)screen_width_current - 192.0f), rect_main_toolbar.height, 192.0f, 24.0f };
+      rect_color_picker = { rect_color_picker_toggle.x, rect_color_picker_toggle.y + 24.0f, 192.0f, (float)screen_height_current - (rect_color_picker_toggle.y + 24.0f) };
 
+      selection_buffer.resize(screen_width_current, screen_height_current);
       screen_width_previous  = screen_width_current;
       screen_height_previous = screen_height_current;
     }
@@ -382,7 +418,9 @@ void Editor::mainLoop() {
     float mouse_xf = (float)mouse_x;
     float mouse_yf = (float)mouse_y;
     if(pointWithinRectangle(mouse_xf, mouse_yf, &rect_screen) == false) { mouse_over_scene = false; }
-    if(mouse_over_scene) { if(pointWithinRectangle(mouse_xf, mouse_yf, &rect_main_toolbar)) { mouse_over_scene = false; } }
+    if(mouse_over_scene) { if(pointWithinRectangle(mouse_xf, mouse_yf, &rect_main_toolbar))                       { mouse_over_scene = false; } }
+    if(mouse_over_scene) { if(pointWithinRectangle(mouse_xf, mouse_yf, &rect_color_picker_toggle))                { mouse_over_scene = false; } }
+    if(mouse_over_scene) { if(ui_colors_expanded && pointWithinRectangle(mouse_xf, mouse_yf, &rect_color_picker)) { mouse_over_scene = false; } }
 
     BeginDrawing(); {
       BeginMode3D(camera); {
@@ -403,6 +441,8 @@ void Editor::mainLoop() {
       } EndMode3D();
       
       ui_main_toolbar->render(rect_main_toolbar);
+      if(GuiButton(rect_color_picker_toggle, "Colors")) { ui_colors_expanded = !ui_colors_expanded; }
+      if(ui_colors_expanded) { ui_color_picker->render(rect_color_picker); }
     } EndDrawing();
 
     // test if mouse+tool interacted with scene
@@ -462,6 +502,7 @@ void Editor::mainLoop() {
                 }
                 case EditorTool_ColorGet: {
                   current_model_frame->getVoxelColor(selection_id.voxel_x, selection_id.voxel_y, selection_id.voxel_z, &selected_color);
+                  ui_color_picker->setCurrentColor(selected_color);
                   break;
                 }
               }
@@ -473,7 +514,7 @@ void Editor::mainLoop() {
     } else {
       selection_mouse_down = false;
     }
-  } // whie(running)
+  } // while(running)
 
   CloseWindow();
 }

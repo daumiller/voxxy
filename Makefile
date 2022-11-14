@@ -4,16 +4,19 @@ RAYLIB_COMPILE_FLAGS = `pkg-config --cflags raylib`
 RAYLIB_LINK_FLAGS    = `pkg-config --libs raylib` -lraygui
 OPENGL_COMPILE_FLAGS = -Wno-deprecated-declarations
 OPENGL_LINK_FLAGS    = -framework OpenGL
-CPP_COMPILE_FLAGS    = -std=c++11 $(RAYLIB_COMPILE_FLAGS) $(OPENGL_COMPILE_FLAGS)
-CPP_LINK_FLAGS       = -lstdc++ $(RAYLIB_LINK_FLAGS) $(OPENGL_LINK_FLAGS)
+OBJFW_COMPILE_FLAGS  = -I/usr/local/include `objfw-config --objcflags`
+OBJFW_LINK_FLAGS     = `objfw-config --ldflags --libs`
+OBJC_COMPILE_FLAGS   = $(OBJFW_COMPILE_FLAGS) $(RAYLIB_COMPILE_FLAGS) $(OPENGL_COMPILE_FLAGS) -std=c99
+OBJC_LINK_FLAGS      = $(OBJFW_LINK_FLAGS)    $(RAYLIB_LINK_FLAGS)    $(OPENGL_LINK_FLAGS)
 
-RELEASE_OBJECTS = source/data/vxx-model.o             \
-                  source/data/vxx-model-editor.o      \
-                  source/rendering/selection-buffer.o \
+RELEASE_OBJECTS = source/rendering/selection-buffer.o \
+                  source/data/voxel-model.o           \
+                  source/data/voxel-model-editor.o    \
                   source/interface/toolbar.o          \
                   source/interface/color-picker.o     \
                   source/editor/action-stack.o        \
-                  source/editor/editor-face-models.o  \
+                  source/editor/voxel-face-models.o   \
+                  source/editor/editor-state.o        \
                   source/editor/editor.o              \
                   source/main.o
 DEBUG_OBJECTS = $(RELEASE_OBJECTS:.o=.debug.o)
@@ -29,16 +32,16 @@ debug: voxxy-debug
 # ===============================================
 
 voxxy: $(RELEASE_OBJECTS)
-	$(LINKER) $(CPP_LINK_FLAGS) $^ -o $@
+	$(LINKER) $(OBJC_LINK_FLAGS) $^ -o $@
 
 voxxy-debug: $(DEBUG_OBJECTS)
-	$(LINKER) $(CPP_LINK_FLAGS) $^ -o $@
+	$(LINKER) $(OBJC_LINK_FLAGS) $^ -o $@
 
-%.debug.o: %.cpp
-	$(COMPILER) $(CPP_COMPILE_FLAGS) --debug $^ -c -o $@
+%.debug.o: %.m
+	$(COMPILER) $(OBJC_COMPILE_FLAGS) --debug $^ -c -o $@
 
-%.o: %.cpp
-	$(COMPILER) $(CPP_COMPILE_FLAGS) $^ -c -o $@
+%.o: %.m
+	$(COMPILER) $(OBJC_COMPILE_FLAGS) $^ -c -o $@
 
 # ===============================================
 

@@ -1,29 +1,34 @@
-#include "selection-buffer.hpp"
+#import "selection-buffer.h"
 #include <stdio.h>
 #include <stdlib.h>
 
-SelectionBuffer::SelectionBuffer() {
-  gl_fbo = 0;
+@implementation SelectionBuffer
+-(id)initWithShaderVertex:(const char*)vertex_shader_path Fragment:(const char*)fragment_shader_path {
+  self = [super init];
+  if(!self) { return self; }
+
+  gl_fbo           = 0;
   gl_texture_color = 0;
   gl_texture_depth = 0;
-}
 
-SelectionBuffer::~SelectionBuffer() {
-  if(gl_fbo) { glDeleteFramebuffers(1, &gl_fbo); }
-  if(gl_texture_color) { glDeleteTextures(1, &gl_texture_color); }
-  if(gl_texture_depth) { glDeleteTextures(1, &gl_texture_depth); }
-}
-
-void SelectionBuffer::initialize(const char* vertex_shader_path, const char* fragment_shader_path) {
   shader = LoadShader(vertex_shader_path, fragment_shader_path);
   shader_location_voxel_x    = GetShaderLocation(shader, "voxel_x");
   shader_location_voxel_y    = GetShaderLocation(shader, "voxel_y");
   shader_location_voxel_z    = GetShaderLocation(shader, "voxel_z");
   shader_location_voxel_face = GetShaderLocation(shader, "voxel_face");
+
+  return self;
 }
 
-void SelectionBuffer::resize(uint32_t width, uint32_t height) {
-  if(gl_fbo) { glDeleteFramebuffers(1, &gl_fbo); }
+-(void)dealloc {
+  if(gl_fbo          ) { glDeleteFramebuffers(1, &gl_fbo          ); }
+  if(gl_texture_color) { glDeleteFramebuffers(1, &gl_texture_color); }
+  if(gl_texture_depth) { glDeleteFramebuffers(1, &gl_texture_depth); }
+  [super dealloc];
+}
+
+-(void)resizeWidth:(uint32_t)width Height:(uint32_t)height {
+  if(gl_fbo          ) { glDeleteFramebuffers(1, &gl_fbo      ); }
   if(gl_texture_color) { glDeleteTextures(1, &gl_texture_color); }
   if(gl_texture_depth) { glDeleteTextures(1, &gl_texture_depth); }
 
@@ -48,19 +53,19 @@ void SelectionBuffer::resize(uint32_t width, uint32_t height) {
     exit(-1);
   }
 
-  this->unbind();
+  [self unbind];
 }
 
-void SelectionBuffer::bind() {
+-(void)bind {
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER, gl_fbo);
 }
 
-void SelectionBuffer::unbind() {
+-(void)unbind {
   glBindTexture(GL_TEXTURE_2D, 0);
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
-SelectionBufferId SelectionBuffer::readIdFromPixel(uint32_t x, uint32_t y) {
+-(SelectionBufferId)readIdFromPixelX:(uint32_t)x Y:(uint32_t)y {
   glBindFramebuffer(GL_READ_FRAMEBUFFER, gl_fbo);
   glReadBuffer(GL_COLOR_ATTACHMENT0);
   int32_t pixel_values[4];
@@ -77,9 +82,14 @@ SelectionBufferId SelectionBuffer::readIdFromPixel(uint32_t x, uint32_t y) {
   return result;
 }
 
-void SelectionBuffer::setShaderId(SelectionBufferId id) {
-  SetShaderValue(shader, shader_location_voxel_x,    &(id.voxel_x),    SHADER_UNIFORM_INT);
-  SetShaderValue(shader, shader_location_voxel_y,    &(id.voxel_y),    SHADER_UNIFORM_INT);
-  SetShaderValue(shader, shader_location_voxel_z,    &(id.voxel_z),    SHADER_UNIFORM_INT);
-  SetShaderValue(shader, shader_location_voxel_face, &(id.voxel_face), SHADER_UNIFORM_INT);
+-(void)setShaderId:(SelectionBufferId)id {
+  [self setShaderIdX:id.voxel_x Y:id.voxel_y Z:id.voxel_z Face:id.voxel_face];
 }
+
+-(void)setShaderIdX:(int32_t)voxel_x Y:(int32_t)voxel_y Z:(int32_t)voxel_z Face:(int32_t)voxel_face {
+  SetShaderValue(shader, shader_location_voxel_x,    &voxel_x,    SHADER_UNIFORM_INT);
+  SetShaderValue(shader, shader_location_voxel_y,    &voxel_y,    SHADER_UNIFORM_INT);
+  SetShaderValue(shader, shader_location_voxel_z,    &voxel_z,    SHADER_UNIFORM_INT);
+  SetShaderValue(shader, shader_location_voxel_face, &voxel_face, SHADER_UNIFORM_INT);
+}
+@end

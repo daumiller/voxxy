@@ -209,7 +209,8 @@ static bool pointWithinRectangle(float x, float y, Rectangle* rect) {
   bool mouse_over_scene                     = true;
   SelectionBufferId selection_id            = { .voxel_x=0, .voxel_y=0, .voxel_z=0, .voxel_face=0 };
   bool selection_mouse_down                 = false;
-  SelectionBufferId selection_mouse_down_id = { .voxel_x=0, .voxel_y=0, .voxel_z=0, .voxel_face=0 }; 
+  SelectionBufferId selection_mouse_down_id = { .voxel_x=0, .voxel_y=0, .voxel_z=0, .voxel_face=0 };
+  int wait_for_key_release                  = 0;
 
   // default shader
   Shader shader_default;
@@ -280,26 +281,52 @@ static bool pointWithinRectangle(float x, float y, Rectangle* rect) {
     } EndDrawing();
 
     // test if mouse interacted with 3d scene
-    if(mouse_over_scene == false)    { selection_mouse_down=false; continue; } // mouse out-of-scene cancels event
-    if(selection_id.voxel_face == 0) { selection_mouse_down=false; continue; } // mouse moved off of face, cancels event
+    bool process_mouse_event = true;
+    if(mouse_over_scene == false)    { selection_mouse_down=false; process_mouse_event=false; } // mouse out-of-scene cancels event
+    if(selection_id.voxel_face == 0) { selection_mouse_down=false; process_mouse_event=false; } // mouse moved off of face, cancels event
     // if mouse-down, save selected face
     if(selection_mouse_down == false) {
       if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
         selection_mouse_down = true;
         selection_mouse_down_id = selection_id;
       }
-      continue;
+      process_mouse_event = false;
     }
+    if(process_mouse_event) { process_mouse_event = (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) == false); }
     // if mouse-up, and same selected face, process event
-    if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT) == false) {
+    if(process_mouse_event) {
       selection_mouse_down = false;
-      if(selection_mouse_down_id.voxel_x != selection_id.voxel_x) { continue; }
-      if(selection_mouse_down_id.voxel_y != selection_id.voxel_y) { continue; }
-      if(selection_mouse_down_id.voxel_z != selection_id.voxel_z) { continue; }
-      if((state_of_interface->selected_tool == EditorTool_VoxelAdd) && (selection_mouse_down_id.voxel_face != selection_id.voxel_face)) { continue; }
-      [self processSceneClickEvent:&selection_id];
+      if(selection_mouse_down_id.voxel_x != selection_id.voxel_x) { process_mouse_event = false; }
+      if(selection_mouse_down_id.voxel_y != selection_id.voxel_y) { process_mouse_event = false; }
+      if(selection_mouse_down_id.voxel_z != selection_id.voxel_z) { process_mouse_event = false; }
+      if((state_of_interface->selected_tool == EditorTool_VoxelAdd) && (selection_mouse_down_id.voxel_face != selection_id.voxel_face)) { process_mouse_event = false; }
+      if(process_mouse_event) {
+        [self processSceneClickEvent:&selection_id];
+      }
     }
-  }
+    
+    bool check_key_events = true;
+    if(wait_for_key_release) {
+      if(IsKeyDown(wait_for_key_release)) {
+        check_key_events = false;
+      } else {  
+        wait_for_key_release = 0;
+      }
+    }
+    if(check_key_events) {
+      if(IsKeyDown(KEY_LEFT_SUPER) || IsKeyDown(KEY_RIGHT_SUPER)) {
+        if(IsKeyDown(KEY_Z)) {
+          wait_for_key_release = KEY_Z;
+          if(IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) {
+            [state_of_data redo];
+          } else {
+            [state_of_data undo];
+          }
+        } // IsKeyDown(KEY_Z)
+      } // if(IsKeyDown(KEY_LEFT_SUPER) || IsKeyDown(KEY_RIGHT_SUPER))
+    } // if(check_key_events)
+
+  } // while(state_of_interface->continue_main_loop)
 
   GuiLoadStyleDefault();
   CloseWindow();

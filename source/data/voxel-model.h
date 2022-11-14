@@ -20,6 +20,7 @@
   uint32_t reserved_3;
   uint32_t reserved_4;
 }
+-(id)initWithVoxel:(Voxel*)voxel;
 @end
 
 @interface VisibleVoxel : OFObject {

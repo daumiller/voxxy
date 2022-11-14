@@ -16,7 +16,7 @@ typedef enum {
 }
 -(id)initWithVoxelAdded:(Voxel*)voxel;
 -(id)initWithVoxelRemoved:(Voxel*)voxel; 
--(id)initWithVoxel:(Voxel*)voxel Colored:(uint32_t)new_color;
+-(id)initWithVoxel:(Voxel*)voxel_before andModification:(Voxel*)voxel_after;
 -(id)initWithVoxels:(OFArray<Voxel*>*)voxels_before andModifications:(OFArray<Voxel*>*)voxels_after;
 @end
 

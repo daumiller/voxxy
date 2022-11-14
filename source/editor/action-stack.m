@@ -15,7 +15,7 @@
 
   type = ActionType_VoxelsAdded;
   voxels_before = [[OFArray<Voxel*> alloc] init];
-  voxels_after  = [[OFMutableArray<Voxel*> alloc] init];
+  voxels_after  = [[OFMutableArray<Voxel*> alloc] initWithCapacity:1];
   [(OFMutableArray<Voxel*>*)voxels_after addObject:voxel];
   return self;
 }
@@ -25,32 +25,21 @@
   if(!self) { return self; }
 
   type = ActionType_VoxelsRemoved;
-  voxels_before = [[OFMutableArray<Voxel*> alloc] init];
+  voxels_before = [[OFMutableArray<Voxel*> alloc] initWithCapacity:1];
   voxels_after  = [[OFArray<Voxel*> alloc] init];
   [(OFMutableArray<Voxel*>*)voxels_before addObject:voxel];
   return self;
 }
  
--(id)initWithVoxel:(Voxel*)voxel Colored:(uint32_t)new_color {
+-(id)initWithVoxel:(Voxel*)voxel_before andModification:(Voxel*)voxel_after {
   self = [super init];
   if(!self) { return self; }
 
-  Voxel* voxel_after = [[Voxel alloc] init];
-  voxel_after->x          = voxel->x;
-  voxel_after->y          = voxel->y;
-  voxel_after->z          = voxel->z;
-  voxel_after->color      = new_color;
-  voxel_after->reserved_1 = voxel->reserved_1;
-  voxel_after->reserved_2 = voxel->reserved_2;
-  voxel_after->reserved_3 = voxel->reserved_3;
-  voxel_after->reserved_4 = voxel->reserved_4;
-
   type = ActionType_VoxelsModified;
-  voxels_before = [[OFMutableArray<Voxel*> alloc] init];
-  voxels_after  = [[OFMutableArray<Voxel*> alloc] init];
-  [(OFMutableArray<Voxel*>*)voxels_before addObject:voxel];
+  voxels_before = [[OFMutableArray<Voxel*> alloc] initWithCapacity:1];
+  voxels_after  = [[OFMutableArray<Voxel*> alloc] initWithCapacity:1];
+  [(OFMutableArray<Voxel*>*)voxels_before addObject:voxel_before];
   [(OFMutableArray<Voxel*>*)voxels_after  addObject:voxel_after];
-  [voxel_after release];
   return self;
 }
 
@@ -133,5 +122,6 @@
     --index_saved;
   }
   [(OFMutableArray<Action*>*)actions addObject:action];
+  ++index_current;
 }
 @end

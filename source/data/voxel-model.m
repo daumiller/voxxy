@@ -4,6 +4,20 @@
 
 // Voxel ==========================================================================================================================
 @implementation Voxel
+-(id)initWithVoxel:(Voxel*)voxel {
+  self = [super init];
+  if(!self) { return self; }
+
+  x          = voxel->x;
+  y          = voxel->y;
+  z          = voxel->z;
+  color      = voxel->color;
+  reserved_1 = voxel->reserved_1;
+  reserved_2 = voxel->reserved_1;
+  reserved_3 = voxel->reserved_1;
+  reserved_4 = voxel->reserved_1;
+  return self;
+}
 @end
 
 // VisibleVoxel ===================================================================================================================

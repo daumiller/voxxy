@@ -246,9 +246,10 @@
   if(!result) { return false; }
 
   Voxel* added_voxel = [current_frame lookupVoxelX:x Y:y Z:z];
-  Action* action = [[Action alloc] initWithVoxelAdded:added_voxel];
+  Voxel* action_voxel = [[Voxel alloc] initWithVoxel:added_voxel];
+  Action* action = [[Action alloc] initWithVoxelAdded:action_voxel];
   [current_stack pushAction:action];
-
+  [action_voxel release];
   [action release];
 
   if(visible_voxels) { [visible_voxels release]; }
@@ -264,14 +265,13 @@
   Voxel* removed_voxel = [current_frame lookupVoxelX:x Y:y Z:z];
   if(!removed_voxel) { return false; }
 
-  [removed_voxel retain];
+  Voxel* action_voxel = [[Voxel alloc] initWithVoxel:removed_voxel];
   bool result = [current_frame removeVoxel:removed_voxel];
-  if(!result) { [removed_voxel release]; return false; }
+  if(!result) { return false; }
 
-  Action* action = [[Action alloc] initWithVoxelRemoved:removed_voxel];
+  Action* action = [[Action alloc] initWithVoxelRemoved:action_voxel];
   [current_stack pushAction:action];
-
-  [removed_voxel release];
+  [action_voxel release];
   [action release];
 
   if(visible_voxels) { [visible_voxels release]; }
@@ -286,14 +286,18 @@
 
   Voxel* colored_voxel = [current_frame lookupVoxelX:x Y:y Z:z];
   if(!colored_voxel) { return false; }
+  if(colored_voxel->color == color) { return false; }
 
-  bool result = [current_frame setVoxel:colored_voxel Color:color];
-  if(!result) { return false; }
-
-  Action* action = [[Action alloc] initWithVoxel:colored_voxel Colored:color];
+  Voxel* action_voxel_before = [[Voxel alloc] initWithVoxel:colored_voxel];
+  Voxel* action_voxel_after  = [[Voxel alloc] initWithVoxel:colored_voxel];
+  action_voxel_after->color = color;
+  Action* action = [[Action alloc] initWithVoxel:action_voxel_before andModification:action_voxel_after];
   [current_stack pushAction:action];
-
+  [action_voxel_before release];
+  [action_voxel_after release];
   [action release];
+
+  [current_frame setVoxel:colored_voxel Color:color];
 
   if(visible_voxels) { [visible_voxels release]; }
   visible_voxels = [current_frame getVisibleVoxels];
@@ -305,28 +309,28 @@
   if(!current_stack) { return false; }
   if(!current_frame) { return false; }
 
-  OFMutableArray<Voxel*>* updated_voxels = [[OFMutableArray alloc] init];
   size_t voxel_count = [voxels count];
+  OFMutableArray<Voxel*>* action_voxels_before = [[OFMutableArray alloc] initWithCapacity:voxel_count];
+  OFMutableArray<Voxel*>* action_voxels_after  = [[OFMutableArray alloc] initWithCapacity:voxel_count];
+  
   for(size_t idx=0; idx<voxel_count; ++idx) {
-    Voxel* current_original = [voxels objectAtIndex:idx];
-    Voxel* current_updated  = [[Voxel alloc] init];
-    current_updated->x          = current_original->x + translate_x;
-    current_updated->y          = current_original->y + translate_y;
-    current_updated->z          = current_original->z + translate_z;
-    current_updated->color      = current_original->color;
-    current_updated->reserved_1 = current_original->reserved_1;
-    current_updated->reserved_2 = current_original->reserved_2;
-    current_updated->reserved_3 = current_original->reserved_3;
-    current_updated->reserved_4 = current_original->reserved_4;
-
-    [current_frame moveVoxel:current_original toX:current_updated->x Y:current_updated->y Z:current_updated->z];
-    [updated_voxels addObject:current_updated];
-    [current_updated release];
+    Voxel* voxel_original = [voxels objectAtIndex:idx];
+    Voxel* action_voxel_before = [[Voxel alloc] initWithVoxel:voxel_original];
+    Voxel* action_voxel_after  = [[Voxel alloc] initWithVoxel:voxel_original];
+    action_voxel_after->x += translate_x;
+    action_voxel_after->y += translate_y;
+    action_voxel_after->z += translate_z;
+    [current_frame moveVoxel:voxel_original toX:action_voxel_after->x Y:action_voxel_after->y Z:action_voxel_after->z];
+    [action_voxels_before addObject:action_voxel_before];
+    [action_voxels_after  addObject:action_voxel_after ];
+    [action_voxels_before release];
+    [action_voxels_after  release];
   }
 
-  Action* action = [[Action alloc] initWithVoxels:voxels andModifications:updated_voxels];
+  Action* action = [[Action alloc] initWithVoxels:action_voxels_before andModifications:action_voxels_after];
   [current_stack pushAction:action];
-  [updated_voxels release];
+  [action_voxels_before release];
+  [action_voxels_after  release];
   [action release];
 
   if(visible_voxels) { [visible_voxels release]; }

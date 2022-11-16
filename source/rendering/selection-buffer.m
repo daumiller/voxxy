@@ -2,6 +2,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+bool selectionBufferIds_sameVoxel(SelectionBufferId* selection_a, SelectionBufferId* selection_b) {
+  return (selection_a->voxel_x == selection_b->voxel_x) &&
+         (selection_a->voxel_y == selection_b->voxel_y) &&
+         (selection_a->voxel_z == selection_b->voxel_z) ;
+}
+
+bool selectionBufferIds_sameFace(SelectionBufferId* selection_a, SelectionBufferId* selection_b) {
+  return (selection_a->voxel_x    == selection_b->voxel_x   ) &&
+         (selection_a->voxel_y    == selection_b->voxel_y   ) &&
+         (selection_a->voxel_z    == selection_b->voxel_z   ) &&
+         (selection_a->voxel_face == selection_b->voxel_face) ;
+}
+
 @implementation SelectionBuffer
 -(id)initWithShaderVertex:(const char*)vertex_shader_path Fragment:(const char*)fragment_shader_path {
   self = [super init];
@@ -21,9 +34,9 @@
 }
 
 -(void)dealloc {
-  if(gl_fbo          ) { glDeleteFramebuffers(1, &gl_fbo          ); }
-  if(gl_texture_color) { glDeleteFramebuffers(1, &gl_texture_color); }
-  if(gl_texture_depth) { glDeleteFramebuffers(1, &gl_texture_depth); }
+  if(gl_fbo          ) { glDeleteFramebuffers(1, &gl_fbo      ); }
+  if(gl_texture_color) { glDeleteTextures(1, &gl_texture_color); }
+  if(gl_texture_depth) { glDeleteTextures(1, &gl_texture_depth); }
   [super dealloc];
 }
 

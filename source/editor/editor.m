@@ -6,6 +6,10 @@
 #include <raylib.h>
 #include <raygui.h>
 
+// TODO: ifdef these by platform, or store (all keyboard shortcuts) in settings...
+#define SHORTCUT_KEY_LEFT  KEY_LEFT_SUPER
+#define SHORTCUT_KEY_RIGHT KEY_RIGHT_SUPER
+
 // Helpers ========================================================================================================================
 static const char* pathForResource(const char* filename) {
   // first, get path to current process's executable
@@ -127,30 +131,107 @@ static bool pointWithinRectangle(float x, float y, Rectangle* rect) {
       }
     } // for(uint32_t idx=0; idx<6; ++idx)
   } // for(uint32_t visible_voxel_index=0; visible_voxel_index<visible_voxel_count; ++visible_voxel_index)
+  BoundingBox box = {
+    .min={
+      .x=(float)(state_of_data->bounding_box.minimum.x),
+      .y=(float)(state_of_data->bounding_box.minimum.y),
+      .z=(float)(state_of_data->bounding_box.minimum.z),
+    },
+    .max={
+      .x=(float)(state_of_data->bounding_box.maximum.x)+1.0f,
+      .y=(float)(state_of_data->bounding_box.maximum.y)+1.0f,
+      .z=(float)(state_of_data->bounding_box.maximum.z)+1.0f,
+    },
+  };
+  DrawBoundingBox(box, GRAY);
 }
 
--(void)processSceneClickEvent:(SelectionBufferId*)selection_id {
-  switch(state_of_interface->selected_tool) {
-    case EditorTool_VoxelAdd:
-      switch(selection_id->voxel_face) {
-        case VOXEL_FACE_TOP   : selection_id->voxel_y += 1; break;
-        case VOXEL_FACE_BOTTOM: selection_id->voxel_y -= 1; break;
-        case VOXEL_FACE_LEFT  : selection_id->voxel_x -= 1; break;
-        case VOXEL_FACE_RIGHT : selection_id->voxel_x += 1; break;
-        case VOXEL_FACE_FRONT : selection_id->voxel_z += 1; break;
-        case VOXEL_FACE_BACK  : selection_id->voxel_z -= 1; break;
+typedef struct {
+  int32_t x;
+  int32_t y;
+  float xf;
+  float yf;
+  bool is_over_scene;
+  bool was_pressed_over_scene;
+  bool was_pressed_over_valid_face;
+  SelectionBufferId pressed_id;
+  SelectionBufferId hovered_id;
+} MouseState;
+
+-(void)processSceneMouseEvents:(MouseState*)mouse_state {
+  // Over Scene?
+  if(mouse_state->is_over_scene == false) {
+    mouse_state->was_pressed_over_scene      = false;
+    mouse_state->was_pressed_over_valid_face = false;
+    return;
+  }
+
+  // Over Valid Face?
+  bool is_hovered_over_valid_face = VOXEL_FACE_VALID(mouse_state->hovered_id.voxel_face);
+  bool was_pressed_and_released_over_scene      = false;
+  bool was_pressed_and_released_over_same_voxel = false;
+  bool was_pressed_and_released_over_same_face  = false;
+  bool is_left_mouse_down                       = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
+
+  if(is_left_mouse_down) {
+    // Was Pressed?
+    if(mouse_state->was_pressed_over_scene == false) {
+      mouse_state->was_pressed_over_scene      = true;
+      mouse_state->was_pressed_over_valid_face = is_hovered_over_valid_face;
+      if(is_hovered_over_valid_face) {
+        mouse_state->pressed_id = mouse_state->hovered_id;
+      } else {
+        mouse_state->pressed_id.voxel_face = 0;
       }
-      [state_of_data voxelAddX:selection_id->voxel_x Y:selection_id->voxel_y Z:selection_id->voxel_z Color:state_of_interface->selected_color];
+    }
+  } else {
+    // Was Released?
+    if(mouse_state->was_pressed_over_scene) {
+      was_pressed_and_released_over_scene = true;
+      mouse_state->was_pressed_over_scene = false;
+    }
+    if(mouse_state->was_pressed_over_valid_face) {
+      was_pressed_and_released_over_same_voxel = is_hovered_over_valid_face && selectionBufferIds_sameVoxel(&(mouse_state->pressed_id), &(mouse_state->hovered_id));
+      was_pressed_and_released_over_same_face  = was_pressed_and_released_over_same_voxel && (mouse_state->pressed_id.voxel_face == mouse_state->hovered_id.voxel_face);
+      mouse_state->was_pressed_over_valid_face = false;
+    }
+  }
+
+  switch(state_of_interface->selected_tool) {
+    case EditorTool_VoxelAdd: {
+      if(!was_pressed_and_released_over_same_face) { break; }
+      switch(mouse_state->pressed_id.voxel_face) {
+        case VOXEL_FACE_TOP   : mouse_state->pressed_id.voxel_y += 1; break;
+        case VOXEL_FACE_BOTTOM: mouse_state->pressed_id.voxel_y -= 1; break;
+        case VOXEL_FACE_LEFT  : mouse_state->pressed_id.voxel_x -= 1; break;
+        case VOXEL_FACE_RIGHT : mouse_state->pressed_id.voxel_x += 1; break;
+        case VOXEL_FACE_FRONT : mouse_state->pressed_id.voxel_z += 1; break;
+        case VOXEL_FACE_BACK  : mouse_state->pressed_id.voxel_z -= 1; break;
+      }
+      [state_of_data voxelAddX:mouse_state->pressed_id.voxel_x Y:mouse_state->pressed_id.voxel_y Z:mouse_state->pressed_id.voxel_z Color:state_of_interface->selected_color];
       break;
-    case EditorTool_VoxelRemove:
-      [state_of_data voxelRemoveX:selection_id->voxel_x Y:selection_id->voxel_y Z:selection_id->voxel_z];
+    }
+
+    case EditorTool_VoxelRemove: {
+      if(!was_pressed_and_released_over_same_voxel) { break; }
+      [state_of_data voxelRemoveX:mouse_state->hovered_id.voxel_x Y:mouse_state->hovered_id.voxel_y Z:mouse_state->hovered_id.voxel_z];
       break;
-    case EditorTool_VoxelColorSet:
-      [state_of_data voxelColorX:selection_id->voxel_x Y:selection_id->voxel_y Z:selection_id->voxel_z Color:state_of_interface->selected_color];
+    }
+
+    case EditorTool_VoxelColorSet: {
+      if(!is_left_mouse_down        ) { break; }
+      if(!is_hovered_over_valid_face) { break; }
+      [state_of_data voxelColorX:mouse_state->hovered_id.voxel_x Y:mouse_state->hovered_id.voxel_y Z:mouse_state->hovered_id.voxel_z Color:state_of_interface->selected_color];
       break;
-    case EditorTool_VoxelColorGet:
-      [state_of_interface setColor:[state_of_data voxelGetColorX:selection_id->voxel_x Y:selection_id->voxel_y Z:selection_id->voxel_z]];
+    }
+
+    case EditorTool_VoxelColorGet: {
+      if(!is_left_mouse_down        ) { break; }
+      if(!is_hovered_over_valid_face) { break; }
+      [state_of_interface setColor:[state_of_data voxelGetColorX:mouse_state->hovered_id.voxel_x Y:mouse_state->hovered_id.voxel_y Z:mouse_state->hovered_id.voxel_z]];
       break;
+    }
+
     case EditorTool_VoxelSelect:       break; // TODO
     case EditorTool_VoxelMoveSelected: break; // TODO
   }
@@ -193,24 +274,24 @@ static bool pointWithinRectangle(float x, float y, Rectangle* rect) {
   SetCameraMode(camera, CAMERA_FREE);
 
   // drawing rectangles, and other loop variables
-  Rectangle draw_rect_screen                = { 0.0f, 0.0f, 0.0f, 0.0f };
-  Rectangle draw_rect_toolbar               = { 0.0f, 0.0f, 0.0f, 0.0f };
-  Rectangle draw_rect_colors_toggle         = { 0.0f, 0.0f, 0.0f, 0.0f };
-  Rectangle draw_rect_colors                = { 0.0f, 0.0f, 0.0f, 0.0f };
-  Rectangle draw_rect_frames_toggle         = { 0.0f, 0.0f, 0.0f, 0.0f };
-  Rectangle draw_rect_frames                = { 0.0f, 0.0f, 0.0f, 0.0f };
-  Rectangle draw_rect_modal                 = { 0.0f, 0.0f, 0.0f, 0.0f };
-  int32_t screen_width_current              = -1;
-  int32_t screen_height_current             = -1;
-  int32_t mouse_x                           = -1;
-  int32_t mouse_y                           = -1;
-  float mouse_xf                            = -1.0f;
-  float mouse_yf                            = -1.0f;
-  bool mouse_over_scene                     = true;
-  SelectionBufferId selection_id            = { .voxel_x=0, .voxel_y=0, .voxel_z=0, .voxel_face=0 };
-  bool selection_mouse_down                 = false;
-  SelectionBufferId selection_mouse_down_id = { .voxel_x=0, .voxel_y=0, .voxel_z=0, .voxel_face=0 };
-  int wait_for_key_release                  = 0;
+  Rectangle draw_rect_screen        = { 0.0f, 0.0f, 0.0f, 0.0f };
+  Rectangle draw_rect_toolbar       = { 0.0f, 0.0f, 0.0f, 0.0f };
+  Rectangle draw_rect_colors_toggle = { 0.0f, 0.0f, 0.0f, 0.0f };
+  Rectangle draw_rect_colors        = { 0.0f, 0.0f, 0.0f, 0.0f };
+  Rectangle draw_rect_frames_toggle = { 0.0f, 0.0f, 0.0f, 0.0f };
+  Rectangle draw_rect_frames        = { 0.0f, 0.0f, 0.0f, 0.0f };
+  Rectangle draw_rect_modal         = { 0.0f, 0.0f, 0.0f, 0.0f };
+  int32_t screen_width_current      = -1;
+  int32_t screen_height_current     = -1;
+  int wait_for_key_release          = 0;
+  MouseState mouse_state = {
+    .x=0, .y=0, .xf=0.0f, .yf=0.0f,
+    .is_over_scene=false,
+    .was_pressed_over_scene=false,
+    .was_pressed_over_valid_face=false,
+    .pressed_id=(SelectionBufferId){ .voxel_x=0, .voxel_y=0, .voxel_z=0, .voxel_face=0 },
+    .hovered_id=(SelectionBufferId){ .voxel_x=0, .voxel_y=0, .voxel_z=0, .voxel_face=0 },
+  };
 
   // default shader
   Shader shader_default;
@@ -245,33 +326,31 @@ static bool pointWithinRectangle(float x, float y, Rectangle* rect) {
     }
 
     // mouse position / determine if over-scene (else, off-screen or over-ui)
-    mouse_x = GetMouseX();
-    mouse_y = GetMouseY();
-    mouse_xf = (float)mouse_x;
-    mouse_yf = (float)mouse_y;
-    mouse_over_scene = true;
-    if(pointWithinRectangle(mouse_xf, mouse_yf, &draw_rect_screen) == false) { mouse_over_scene = false; }
-    if(mouse_over_scene) { if(pointWithinRectangle(mouse_xf, mouse_yf, &draw_rect_toolbar)) { mouse_over_scene = false; } }
-    if(mouse_over_scene) { if(pointWithinRectangle(mouse_xf, mouse_yf, &draw_rect_colors_toggle)) { mouse_over_scene = false; } }
-    if(mouse_over_scene) { if(pointWithinRectangle(mouse_xf, mouse_yf, &draw_rect_frames_toggle)) { mouse_over_scene = false; } }
-    if(mouse_over_scene) { if(state_of_interface->ui_colors_expanded && pointWithinRectangle(mouse_xf, mouse_yf, &draw_rect_colors)) { mouse_over_scene = false; } }
-    if(mouse_over_scene) { if(state_of_interface->ui_frames_expanded && pointWithinRectangle(mouse_xf, mouse_yf, &draw_rect_frames)) { mouse_over_scene = false; } }
+    mouse_state.x=GetMouseX(); mouse_state.xf=(float)mouse_state.x;
+    mouse_state.y=GetMouseY(); mouse_state.yf=(float)mouse_state.y;
+    mouse_state.is_over_scene = true;
+    if(pointWithinRectangle(mouse_state.xf, mouse_state.yf, &draw_rect_screen) == false) { mouse_state.is_over_scene = false; }
+    if(mouse_state.is_over_scene) { if(pointWithinRectangle(mouse_state.xf, mouse_state.yf, &draw_rect_toolbar      )) { mouse_state.is_over_scene = false; } }
+    if(mouse_state.is_over_scene) { if(pointWithinRectangle(mouse_state.xf, mouse_state.yf, &draw_rect_colors_toggle)) { mouse_state.is_over_scene = false; } }
+    if(mouse_state.is_over_scene) { if(pointWithinRectangle(mouse_state.xf, mouse_state.yf, &draw_rect_frames_toggle)) { mouse_state.is_over_scene = false; } }
+    if(mouse_state.is_over_scene) { if(state_of_interface->ui_colors_expanded && pointWithinRectangle(mouse_state.xf, mouse_state.yf, &draw_rect_colors)) { mouse_state.is_over_scene = false; } }
+    if(mouse_state.is_over_scene) { if(state_of_interface->ui_frames_expanded && pointWithinRectangle(mouse_state.xf, mouse_state.yf, &draw_rect_frames)) { mouse_state.is_over_scene = false; } }
 
     // render scene: 3D Objects and UI
     BeginDrawing(); {
       BeginMode3D(camera); {
-        selection_id.voxel_face = 0;
-        if(mouse_over_scene) {
+        mouse_state.hovered_id.voxel_face = 0;
+        if(mouse_state.is_over_scene) {
           [selection_buffer bind];
           glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
           [selection_buffer setShaderIdX:0 Y:0 Z:0 Face:0];
-          [self renderModelForSelectionBuffer:true withDefaultShader:&shader_default andHoveredSelection:&selection_id];
+          [self renderModelForSelectionBuffer:true withDefaultShader:&shader_default andHoveredSelection:&(mouse_state.hovered_id)];
           [selection_buffer unbind];
-          selection_id = [selection_buffer readIdFromPixelX:mouse_x Y:(screen_height_current - mouse_y)];
+          mouse_state.hovered_id = [selection_buffer readIdFromPixelX:mouse_state.x Y:(screen_height_current - mouse_state.y)];
         }
         ClearBackground((Color){ 255, 255, 255, 255 });
         DrawGrid(10, 1.0f);
-        [self renderModelForSelectionBuffer:false withDefaultShader:&shader_default andHoveredSelection:&selection_id];
+        [self renderModelForSelectionBuffer:false withDefaultShader:&shader_default andHoveredSelection:&(mouse_state.hovered_id)];
       } EndMode3D();
       
       [state_of_interface->toolbar renderInRectangle:draw_rect_toolbar];
@@ -280,31 +359,10 @@ static bool pointWithinRectangle(float x, float y, Rectangle* rect) {
       if(state_of_interface->ui_colors_expanded) { [state_of_interface->color_picker renderInRectangle:draw_rect_colors]; }
     } EndDrawing();
 
-    // test if mouse interacted with 3d scene
-    bool process_mouse_event = true;
-    if(mouse_over_scene == false)    { selection_mouse_down=false; process_mouse_event=false; } // mouse out-of-scene cancels event
-    if(selection_id.voxel_face == 0) { selection_mouse_down=false; process_mouse_event=false; } // mouse moved off of face, cancels event
-    // if mouse-down, save selected face
-    if(selection_mouse_down == false) {
-      if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
-        selection_mouse_down = true;
-        selection_mouse_down_id = selection_id;
-      }
-      process_mouse_event = false;
-    }
-    if(process_mouse_event) { process_mouse_event = (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) == false); }
-    // if mouse-up, and same selected face, process event
-    if(process_mouse_event) {
-      selection_mouse_down = false;
-      if(selection_mouse_down_id.voxel_x != selection_id.voxel_x) { process_mouse_event = false; }
-      if(selection_mouse_down_id.voxel_y != selection_id.voxel_y) { process_mouse_event = false; }
-      if(selection_mouse_down_id.voxel_z != selection_id.voxel_z) { process_mouse_event = false; }
-      if((state_of_interface->selected_tool == EditorTool_VoxelAdd) && (selection_mouse_down_id.voxel_face != selection_id.voxel_face)) { process_mouse_event = false; }
-      if(process_mouse_event) {
-        [self processSceneClickEvent:&selection_id];
-      }
-    }
-    
+    // Mouse Events
+    [self processSceneMouseEvents:&mouse_state];
+
+    // Keyboard Events
     bool check_key_events = true;
     if(wait_for_key_release) {
       if(IsKeyDown(wait_for_key_release)) {
@@ -314,7 +372,7 @@ static bool pointWithinRectangle(float x, float y, Rectangle* rect) {
       }
     }
     if(check_key_events) {
-      if(IsKeyDown(KEY_LEFT_SUPER) || IsKeyDown(KEY_RIGHT_SUPER)) {
+      if(IsKeyDown(SHORTCUT_KEY_LEFT) || IsKeyDown(SHORTCUT_KEY_RIGHT)) {
         if(IsKeyDown(KEY_Z)) {
           wait_for_key_release = KEY_Z;
           if(IsKeyDown(KEY_LEFT_SHIFT) || IsKeyDown(KEY_RIGHT_SHIFT)) {
@@ -323,7 +381,7 @@ static bool pointWithinRectangle(float x, float y, Rectangle* rect) {
             [state_of_data undo];
           }
         } // IsKeyDown(KEY_Z)
-      } // if(IsKeyDown(KEY_LEFT_SUPER) || IsKeyDown(KEY_RIGHT_SUPER))
+      } // if(IsKeyDown(SHORTCUT_KEY_LEFT) || IsKeyDown(SHORTCUT_KEY_RIGHT))
     } // if(check_key_events)
 
   } // while(state_of_interface->continue_main_loop)

@@ -67,6 +67,36 @@
   return result;
 }
 
+-(OFArray<VisibleVoxel*>*)getVisibleVoxelsWithBounds:(Bounds3Di*)bounds {
+  OFMutableArray<VisibleVoxel*>* visible_voxels = [[OFMutableArray alloc] init];
+  bounds->minimum.x = INT_MAX;  bounds->maximum.x = INT_MIN;
+  bounds->minimum.y = INT_MAX;  bounds->maximum.y = INT_MIN;
+  bounds->minimum.z = INT_MAX;  bounds->maximum.x = INT_MIN;
+
+  for(OFString* key in voxels) {
+    Voxel* voxel = voxels[key];
+    uint8_t faces = 0;
+    if([self hasVoxelX:voxel->x   Y:voxel->y+1 Z:voxel->z  ] == false) { faces |= VOXEL_FACE_TOP;    }
+    if([self hasVoxelX:voxel->x   Y:voxel->y-1 Z:voxel->z  ] == false) { faces |= VOXEL_FACE_BOTTOM; }
+    if([self hasVoxelX:voxel->x-1 Y:voxel->y   Z:voxel->z  ] == false) { faces |= VOXEL_FACE_LEFT;   }
+    if([self hasVoxelX:voxel->x+1 Y:voxel->y   Z:voxel->z  ] == false) { faces |= VOXEL_FACE_RIGHT;  }
+    if([self hasVoxelX:voxel->x   Y:voxel->y   Z:voxel->z+1] == false) { faces |= VOXEL_FACE_FRONT;  }
+    if([self hasVoxelX:voxel->x   Y:voxel->y   Z:voxel->z-1] == false) { faces |= VOXEL_FACE_BACK;   }
+    if(faces) {
+      if(voxel->x < bounds->minimum.x) { bounds->minimum.x = voxel->x; }  if(voxel->x > bounds->maximum.x) { bounds->maximum.x = voxel->x; }
+      if(voxel->y < bounds->minimum.y) { bounds->minimum.y = voxel->y; }  if(voxel->y > bounds->maximum.y) { bounds->maximum.y = voxel->y; }
+      if(voxel->z < bounds->minimum.z) { bounds->minimum.z = voxel->z; }  if(voxel->z > bounds->maximum.z) { bounds->maximum.z = voxel->z; }
+      VisibleVoxel* visible = [[VisibleVoxel alloc] init];
+      visible->faces = faces;
+      visible->voxel = voxel;
+      [visible_voxels addObject:visible];
+      [visible release];
+    }
+  }
+
+  return visible_voxels;
+}
+
 -(OFArray*)getVisibleVoxels {
   OFMutableArray<VisibleVoxel*>* visible_voxels = [[OFMutableArray alloc] init];
 

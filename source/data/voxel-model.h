@@ -8,6 +8,7 @@
 #define VOXEL_FACE_RIGHT   8  /* +x */
 #define VOXEL_FACE_FRONT  16  /* +z */
 #define VOXEL_FACE_BACK   32  /* -z */
+#define VOXEL_FACE_VALID(x) ((x > 0) && (x < 64))
 
 @interface Voxel : OFObject {
 @public
@@ -36,11 +37,17 @@ typedef struct {
   int32_t z;
 } Vector3i;
 
+typedef struct {
+  Vector3i minimum;
+  Vector3i maximum;
+} Bounds3Di;
+
 @interface VoxelModelFrame : OFObject {
 @public
   OFMutableDictionary<OFString*, Voxel*>* voxels;
 }
 -(OFArray<VisibleVoxel*>*)getVisibleVoxels;
+-(OFArray<VisibleVoxel*>*)getVisibleVoxelsWithBounds:(Bounds3Di*)bounds;
 -(bool)hasVoxelX:(int32_t)x Y:(int32_t)y Z:(int32_t)z;
 -(bool)hasVoxel:(Vector3i)vector;
 -(Voxel*)getVoxelX:(int32_t)x Y:(int32_t)y Z:(int32_t)z;

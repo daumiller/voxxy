@@ -98,6 +98,7 @@
   current_frame_name  = NULL;
   visible_voxels      = NULL;
   frame_action_stacks = NULL;
+  bounding_box        = (Bounds3Di){ .minimum={.x=0,.y=0,.z=0}, .maximum={.x=0,.y=0,.z=0} };
   return self;
 }
 
@@ -107,6 +108,7 @@
   if(current_frame_name ) { [current_frame_name  release]; current_frame_name  = NULL; }
   if(current_model_path ) { [current_model_path  release]; current_model_path  = NULL; }
   if(current_model      ) { [current_model       release]; current_model       = NULL; }
+  bounding_box  = (Bounds3Di){ .minimum={.x=0,.y=0,.z=0}, .maximum={.x=0,.y=0,.z=0} };
   current_frame = NULL;
 }
 
@@ -126,7 +128,7 @@
   [current_model addFrame:current_frame withName:"default"];
   [current_frame release];
 
-  visible_voxels = [current_frame getVisibleVoxels];
+  visible_voxels = [current_frame getVisibleVoxelsWithBounds:&bounding_box];
   ActionStack* action_stack_default = [[ActionStack alloc] initWithDepth:ACTION_STACK_DEPTH];
   frame_action_stacks = [[OFMutableDictionary<OFString*, ActionStack*> alloc] init];
   [frame_action_stacks setObject:action_stack_default forKey:current_frame_name];
@@ -189,7 +191,7 @@
     }
   }
   if(visible_voxels) { [visible_voxels release]; }
-  visible_voxels = [current_frame getVisibleVoxels];
+  visible_voxels = [current_frame getVisibleVoxelsWithBounds:&bounding_box];
 }
 
 -(void)unperformAction:(Action*)action {
@@ -216,7 +218,7 @@
     }
   }
   if(visible_voxels) { [visible_voxels release]; }
-  visible_voxels = [current_frame getVisibleVoxels];
+  visible_voxels = [current_frame getVisibleVoxelsWithBounds:&bounding_box];
 }
 
 -(bool)undo {
@@ -253,7 +255,7 @@
   [action release];
 
   if(visible_voxels) { [visible_voxels release]; }
-  visible_voxels = [current_frame getVisibleVoxels];
+  visible_voxels = [current_frame getVisibleVoxelsWithBounds:&bounding_box];
   return true;
 }
 
@@ -275,18 +277,19 @@
   [action release];
 
   if(visible_voxels) { [visible_voxels release]; }
-  visible_voxels = [current_frame getVisibleVoxels];
+  visible_voxels = [current_frame getVisibleVoxelsWithBounds:&bounding_box];
   return true;
 }
 
 -(bool)voxelColorX:(int32_t)x Y:(int32_t)y Z:(int32_t)z Color:(uint32_t)color {
-  ActionStack* current_stack = [self getCurrentActionStack];
-  if(!current_stack) { return false; }
   if(!current_frame) { return false; }
 
   Voxel* colored_voxel = [current_frame lookupVoxelX:x Y:y Z:z];
   if(!colored_voxel) { return false; }
   if(colored_voxel->color == color) { return false; }
+
+  ActionStack* current_stack = [self getCurrentActionStack];
+  if(!current_stack) { return false; }
 
   Voxel* action_voxel_before = [[Voxel alloc] initWithVoxel:colored_voxel];
   Voxel* action_voxel_after  = [[Voxel alloc] initWithVoxel:colored_voxel];
@@ -300,7 +303,7 @@
   [current_frame setVoxel:colored_voxel Color:color];
 
   if(visible_voxels) { [visible_voxels release]; }
-  visible_voxels = [current_frame getVisibleVoxels];
+  visible_voxels = [current_frame getVisibleVoxelsWithBounds:&bounding_box];
   return true;
 }
 
@@ -334,7 +337,7 @@
   [action release];
 
   if(visible_voxels) { [visible_voxels release]; }
-  visible_voxels = [current_frame getVisibleVoxels];
+  visible_voxels = [current_frame getVisibleVoxelsWithBounds:&bounding_box];
   return true;
 }
 

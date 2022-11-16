@@ -72,6 +72,7 @@ typedef enum {
   OFString*               current_model_path;
   OFString*               current_frame_name;
   OFArray<VisibleVoxel*>* visible_voxels;
+  Bounds3Di               bounding_box;
   OFMutableDictionary<OFString*, ActionStack*>* frame_action_stacks;
 }
 -(void)loadNewModel;

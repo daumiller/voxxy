@@ -12,6 +12,9 @@ typedef struct {
   int32_t voxel_face;
 } SelectionBufferId;
 
+bool selectionBufferIds_sameVoxel(SelectionBufferId* selection_a, SelectionBufferId* selection_b);
+bool selectionBufferIds_sameFace(SelectionBufferId* selection_a, SelectionBufferId* selection_b);
+
 @interface SelectionBuffer : OFObject {
 @public
   Shader shader;

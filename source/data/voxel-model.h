@@ -59,6 +59,6 @@ typedef struct {
   OFMutableDictionary<OFString*, VoxelModelFrame*>* frames;
 }
 -(id)init;
-// -(id)initFromFile:(const char*)file_path;
+-(id)initFromFile:(OFString*)file_path;
 -(VoxelModelFrame*)getFrameWithName:(const char*)name;
 @end

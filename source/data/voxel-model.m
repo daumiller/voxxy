@@ -1,4 +1,6 @@
 #import "voxel-model.h"
+#import "voxel-model-editor.h"
+#import "voxfile.h"
 
 #define LOOKUP_FORMAT_STRING "%d_%d_%d"
 
@@ -71,7 +73,7 @@
   OFMutableArray<VisibleVoxel*>* visible_voxels = [[OFMutableArray alloc] init];
   bounds->minimum.x = INT_MAX;  bounds->maximum.x = INT_MIN;
   bounds->minimum.y = INT_MAX;  bounds->maximum.y = INT_MIN;
-  bounds->minimum.z = INT_MAX;  bounds->maximum.x = INT_MIN;
+  bounds->minimum.z = INT_MAX;  bounds->maximum.z = INT_MIN;
 
   for(OFString* key in voxels) {
     Voxel* voxel = voxels[key];
@@ -132,8 +134,27 @@
   return self;
 }
 
+-(id)initFromFile:(OFString*)file_path {
+  self = [super init];
+  if(!self) { return self; }
+
+  OFArray<Voxel*>* voxels = [VoxFile readVoxels:file_path];
+  if(!voxels) { [self release]; return nil; }
+
+  VoxelModelFrameEditor* default_frame = [[VoxelModelFrameEditor alloc] init];
+  for(Voxel* voxel in voxels) {
+    [default_frame addVoxelX:voxel->x Y:voxel->y Z:voxel->z Color:voxel->color];
+  }
+  [voxels release];
+  frames = [[OFMutableDictionary alloc] init];
+  [frames setObject:default_frame forKey:@"default"];
+  [default_frame release];
+
+  return self;
+}
+
 -(void)dealloc {
-  [frames release];
+  if(frames) { [frames release]; }
   [super dealloc];
 }
 

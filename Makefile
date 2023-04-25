@@ -12,6 +12,7 @@ OBJC_LINK_FLAGS      = $(OBJFW_LINK_FLAGS)    $(RAYLIB_LINK_FLAGS)    $(OPENGL_L
 RELEASE_OBJECTS = source/rendering/selection-buffer.o \
                   source/data/voxel-model.o           \
                   source/data/voxel-model-editor.o    \
+                  source/data/voxfile.o               \
                   source/interface/toolbar.o          \
                   source/interface/color-picker.o     \
                   source/editor/action-stack.o        \
@@ -54,3 +55,6 @@ veryclean: clean
 	rm -f voxxy-debug
 
 remake: veryclean all
+
+compile_commands:
+	bear -- make

@@ -11,6 +11,7 @@
 		C701A2DB2920A3B60095839E /* voxel-model.h in Sources */ = {isa = PBXBuildFile; fileRef = C701A2DA2920A3B60095839E /* voxel-model.h */; };
 		C701A2DD2920A4380095839E /* voxel-model-editor.h in Sources */ = {isa = PBXBuildFile; fileRef = C701A2DC2920A4380095839E /* voxel-model-editor.h */; };
 		C701A2E12920A47A0095839E /* voxel-model-editor.m in Sources */ = {isa = PBXBuildFile; fileRef = C701A2E02920A47A0095839E /* voxel-model-editor.m */; };
+		C7A70DF229F84E2800DE2A17 /* voxfile.m in Sources */ = {isa = PBXBuildFile; fileRef = C7A70DF129F84E2800DE2A17 /* voxfile.m */; };
 		C7CE819D2920A5AC009E95F0 /* toolbar.h in Sources */ = {isa = PBXBuildFile; fileRef = C7CE819C2920A5AC009E95F0 /* toolbar.h */; };
 		C7CE819F2920A5C7009E95F0 /* toolbar.m in Sources */ = {isa = PBXBuildFile; fileRef = C7CE819E2920A5C7009E95F0 /* toolbar.m */; };
 		C7CE81A12920AE94009E95F0 /* color-picker.h in Sources */ = {isa = PBXBuildFile; fileRef = C7CE81A02920AE94009E95F0 /* color-picker.h */; };
@@ -49,6 +50,8 @@
 		C701A2DC2920A4380095839E /* voxel-model-editor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "voxel-model-editor.h"; sourceTree = "<group>"; };
 		C701A2DE2920A46F0095839E /* voxel-model.m */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.c.objc; path = "voxel-model.m"; sourceTree = "<group>"; tabWidth = 2; wrapsLines = 0; };
 		C701A2E02920A47A0095839E /* voxel-model-editor.m */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.c.objc; path = "voxel-model-editor.m"; sourceTree = "<group>"; tabWidth = 2; wrapsLines = 0; };
+		C7A70DF029F84E2300DE2A17 /* voxfile.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = voxfile.h; sourceTree = "<group>"; };
+		C7A70DF129F84E2800DE2A17 /* voxfile.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = voxfile.m; sourceTree = "<group>"; };
 		C7CE819C2920A5AC009E95F0 /* toolbar.h */ = {isa = PBXFileReference; explicitFileType = sourcecode.c.h; indentWidth = 2; path = toolbar.h; sourceTree = "<group>"; tabWidth = 2; wrapsLines = 0; };
 		C7CE819E2920A5C7009E95F0 /* toolbar.m */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.c.objc; path = toolbar.m; sourceTree = "<group>"; tabWidth = 2; wrapsLines = 0; };
 		C7CE81A02920AE94009E95F0 /* color-picker.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "color-picker.h"; sourceTree = "<group>"; };
@@ -110,9 +113,11 @@
 			isa = PBXGroup;
 			children = (
 				C701A2DA2920A3B60095839E /* voxel-model.h */,
-				C701A2DC2920A4380095839E /* voxel-model-editor.h */,
 				C701A2DE2920A46F0095839E /* voxel-model.m */,
+				C701A2DC2920A4380095839E /* voxel-model-editor.h */,
 				C701A2E02920A47A0095839E /* voxel-model-editor.m */,
+				C7A70DF029F84E2300DE2A17 /* voxfile.h */,
+				C7A70DF129F84E2800DE2A17 /* voxfile.m */,
 			);
 			path = data;
 			sourceTree = "<group>";
@@ -218,6 +223,7 @@
 				C7CE81A12920AE94009E95F0 /* color-picker.h in Sources */,
 				C7CE819F2920A5C7009E95F0 /* toolbar.m in Sources */,
 				C701A2DB2920A3B60095839E /* voxel-model.h in Sources */,
+				C7A70DF229F84E2800DE2A17 /* voxfile.m in Sources */,
 				C7CE81AB2920B5F1009E95F0 /* action-stack.m in Sources */,
 				C7CE81B029215892009E95F0 /* voxel-model.m in Sources */,
 				C7CE81AF2920C375009E95F0 /* voxel-face-models.m in Sources */,

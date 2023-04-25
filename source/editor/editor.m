@@ -50,6 +50,44 @@ static bool pointWithinRectangle(float x, float y, Rectangle* rect) {
   return true;
 }
 
+static void drawBoundingGrid(Vector3i* minimums, Vector3i* maximums) {
+  int32_t x_begin = (float)(minimums->x - 2);  int32_t x_end = (float)(maximums->x + 3);
+  int32_t y_begin = (float)(minimums->y - 2);  int32_t y_end = (float)(maximums->y + 3);
+  int32_t z_begin = (float)(minimums->z - 2);  int32_t z_end = (float)(maximums->z + 3);
+
+  rlBegin(RL_LINES);
+
+  float fx_begin = (float)x_begin;
+  float fx_end   = (float)x_end;
+  float fy_begin = (float)y_begin;
+  float fy_end   = (float)y_end;
+  float fz_begin = (float)z_begin;
+  float fz_end   = (float)z_end;
+  for(int32_t z_current=z_begin; z_current<=z_end; ++z_current) {
+    rlColor3f(1.0f, 0.75f, 1.0f);
+    rlVertex3f(fx_begin, fy_begin, (float)z_current);
+    rlVertex3f(fx_end, fy_begin, (float)z_current);
+    rlVertex3f(fx_begin, fy_begin, (float)z_current);
+    rlVertex3f(fx_begin, fy_end, (float)z_current);
+  }
+  for(int32_t y_current=y_begin; y_current<=y_end; ++y_current) {
+    rlColor3f(0.75f, 0.75f, 0.75f);
+    rlVertex3f(fx_begin, (float)y_current, fz_begin);
+    rlVertex3f(fx_end, (float)y_current, fz_begin);
+    rlVertex3f(fx_begin, (float)y_current, fz_begin);
+    rlVertex3f(fx_begin, (float)y_current, fz_end);
+  }
+  for(int32_t x_current=x_begin; x_current<=x_end; ++x_current) {
+    rlColor3f(0.75f, 0.75f, 0.75f);
+    rlVertex3f((float)x_current, fy_begin, fz_begin);
+    rlVertex3f((float)x_current, fy_begin, fz_end);
+    rlVertex3f((float)x_current, fy_begin, fz_begin);
+    rlVertex3f((float)x_current, fy_end, fz_begin);
+  }
+
+  rlEnd(); // RL_LINES
+}
+
 // Editor =========================================================================================================================
 @implementation Editor
 -(id)init {
@@ -61,7 +99,15 @@ static bool pointWithinRectangle(float x, float y, Rectangle* rect) {
   voxel_face_models  = NULL;
   selection_buffer   = NULL;
 
-  [state_of_data loadNewModel];
+  // [state_of_data loadNewModel];
+  // [state_of_data loadModelFile:@"./chr_cat.vox"];
+
+  const char* model_path = pathForResource("chr_knight.vox");
+  OFString* model_path_string = [OFString stringWithUTF8String:model_path];
+  free(model_path);
+  [state_of_data loadModelFile:model_path_string];
+  [model_path_string release];
+
   return self;
 }
 
@@ -131,19 +177,6 @@ static bool pointWithinRectangle(float x, float y, Rectangle* rect) {
       }
     } // for(uint32_t idx=0; idx<6; ++idx)
   } // for(uint32_t visible_voxel_index=0; visible_voxel_index<visible_voxel_count; ++visible_voxel_index)
-  BoundingBox box = {
-    .min={
-      .x=(float)(state_of_data->bounding_box.minimum.x),
-      .y=(float)(state_of_data->bounding_box.minimum.y),
-      .z=(float)(state_of_data->bounding_box.minimum.z),
-    },
-    .max={
-      .x=(float)(state_of_data->bounding_box.maximum.x)+1.0f,
-      .y=(float)(state_of_data->bounding_box.maximum.y)+1.0f,
-      .z=(float)(state_of_data->bounding_box.maximum.z)+1.0f,
-    },
-  };
-  DrawBoundingBox(box, GRAY);
 }
 
 typedef struct {
@@ -273,6 +306,10 @@ typedef struct {
   };
   SetCameraMode(camera, CAMERA_FREE);
 
+  camera.target.x = state_of_data->bounding_box.minimum.x + (state_of_data->bounding_box.maximum.x - state_of_data->bounding_box.minimum.x) / 2.0f;
+  camera.target.y = state_of_data->bounding_box.minimum.y + (state_of_data->bounding_box.maximum.y - state_of_data->bounding_box.minimum.y) / 2.0f;
+  camera.target.z = state_of_data->bounding_box.minimum.z + (state_of_data->bounding_box.maximum.z - state_of_data->bounding_box.minimum.z) / 2.0f;
+
   // drawing rectangles, and other loop variables
   Rectangle draw_rect_screen        = { 0.0f, 0.0f, 0.0f, 0.0f };
   Rectangle draw_rect_toolbar       = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -349,7 +386,9 @@ typedef struct {
           mouse_state.hovered_id = [selection_buffer readIdFromPixelX:mouse_state.x Y:(screen_height_current - mouse_state.y)];
         }
         ClearBackground((Color){ 255, 255, 255, 255 });
-        DrawGrid(10, 1.0f);
+        if(state_of_interface->is_grid_visible) {
+          drawBoundingGrid(&(state_of_data->bounding_box.minimum), &(state_of_data->bounding_box.maximum));
+        }
         [self renderModelForSelectionBuffer:false withDefaultShader:&shader_default andHoveredSelection:&(mouse_state.hovered_id)];
       } EndMode3D();
       
@@ -382,6 +421,10 @@ typedef struct {
           }
         } // IsKeyDown(KEY_Z)
       } // if(IsKeyDown(SHORTCUT_KEY_LEFT) || IsKeyDown(SHORTCUT_KEY_RIGHT))
+      if(IsKeyDown(KEY_G)) {
+        wait_for_key_release = KEY_G;
+        state_of_interface->is_grid_visible = !state_of_interface->is_grid_visible;
+      }
     } // if(check_key_events)
 
   } // while(state_of_interface->continue_main_loop)

@@ -29,6 +29,7 @@
   toolbar                  = [[Toolbar alloc] initWithStyle:ToolbarStyle_Grouped];
   color_picker             = [[ColorPicker alloc] init];
   continue_main_loop       = true;
+  is_grid_visible          = true;
 
   [color_picker setColor:selected_color];
 
@@ -132,9 +133,34 @@
   ActionStack* action_stack_default = [[ActionStack alloc] initWithDepth:ACTION_STACK_DEPTH];
   frame_action_stacks = [[OFMutableDictionary<OFString*, ActionStack*> alloc] init];
   [frame_action_stacks setObject:action_stack_default forKey:current_frame_name];
+  [action_stack_default release];
 }
-//-(bool)loadModelFile:(OFString*)path;
-//-(bool)saveModel;
+
+-(bool)loadModelFile:(OFString*)path {
+  VoxelModelEditor* loaded_model = [[VoxelModelEditor alloc] initFromFile:path];
+  if(!loaded_model) { return false; }
+
+  [self cleanup];
+  current_model_path = [[OFString alloc] initWithString:path];
+  current_frame_name = [[OFString alloc] initWithCString:"default" encoding:OFStringEncodingUTF8];
+
+  current_model = loaded_model;
+  // TODO: load first frame, whatever its name may be, also assign current_frame_name
+  current_frame = (VoxelModelFrameEditor*)[current_model getFrameWithName:"default"];
+  visible_voxels = [current_frame getVisibleVoxelsWithBounds:&bounding_box];
+
+  ActionStack* action_stack_default = [[ActionStack alloc] initWithDepth:ACTION_STACK_DEPTH];
+  frame_action_stacks = [[OFMutableDictionary<OFString*, ActionStack*> alloc] init];
+  [frame_action_stacks setObject:action_stack_default forKey:current_frame_name];
+  [action_stack_default release];
+
+  return true;
+}
+
+-(bool)saveModel {
+  return false;
+}
+
 //-(bool)saveModelAs:(OFString*)path;
 //-(bool)addFrameNamed:(OFString*)frame_name;
 //-(bool)removeFrameNamed:(OFString*)frame_name;

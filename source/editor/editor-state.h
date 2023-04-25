@@ -61,6 +61,7 @@ typedef enum {
   Toolbar*                 toolbar;
   ColorPicker*             color_picker;
   bool                     continue_main_loop;
+  bool                     is_grid_visible;
 }
 -(void)setColor:(uint32_t)color;
 @end
@@ -76,8 +77,8 @@ typedef enum {
   OFMutableDictionary<OFString*, ActionStack*>* frame_action_stacks;
 }
 -(void)loadNewModel;
-//-(bool)loadModelFile:(OFString*)path;
-//-(bool)saveModel;
+-(bool)loadModelFile:(OFString*)path;
+-(bool)saveModel;
 //-(bool)saveModelAs:(OFString*)path;
 //-(bool)addFrameNamed:(OFString*)frame_name;
 //-(bool)removeFrameNamed:(OFString*)frame_name;

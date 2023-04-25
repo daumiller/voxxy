@@ -1,0 +1,15 @@
+{
+  "files.exclude": {
+      "**/*.o": true,
+      "**/*.DS_Store": true,
+      "**/*.dSYM": true,
+      "**/*.a": true,
+      "**/*.app": true,
+      "main": true,
+      "**/.cache": true,
+      "**/compile_commands.json": true
+  },
+  "files.associations": {
+    "*.h": "objective-c"
+  }
+}
